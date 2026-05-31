@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Expert System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --gray-light: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .symptoms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .symptom-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--light);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .symptom-item:hover {
+            background: var(--gray-light);
+        }
+
+        .symptom-item.selected {
+            background: #dbeafe;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .symptom-item input {
+            transform: scale(1.2);
+        }
+
+        .symptom-info {
+            flex: 1;
+        }
+
+        .symptom-name {
+            font-weight: 600;
+        }
+
+        .symptom-desc {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 3px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray);
+            color: white;
+        }
+
+        .selected-symptoms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .selected-symptom-tag {
+            background: var(--primary);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .selected-symptom-tag i {
+            cursor: pointer;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .diagnosis-card {
+            border-left: 5px solid var(--primary);
+            margin-bottom: 20px;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .diagnosis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .diagnosis-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .confidence-meter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .confidence-bar {
+            width: 150px;
+            height: 10px;
+            background: var(--gray-light);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .confidence-high {
+            background: var(--secondary);
+        }
+
+        .confidence-medium {
+            background: var(--warning);
+        }
+
+        .confidence-low {
+            background: var(--danger);
+        }
+
+        .confidence-text {
+            font-weight: 600;
+            min-width: 40px;
+        }
+
+        .reasoning-details {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .treatment-plan {
+            padding: 15px;
+            background: #dcfce7;
+            border-radius: 8px;
+            border-left: 3px solid var(--secondary);
+        }
+
+        .treatment-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .warning-banner {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .warning-banner i {
+            color: #f59e0b;
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .symptoms-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .diagnosis-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> AI Medical Expert System</h1>
+            <p>Rule-Based Reasoning for Medical Diagnosis</p>
+        </header>
+
+        <div class="warning-banner">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Important Notice:</strong> This system is for educational purposes only. 
+                Always consult qualified healthcare professionals for medical diagnoses and treatment.
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-stethoscope"></i> Select Symptoms</h2>
+            <p>Select all symptoms that apply to the patient:</p>
+            
+            <div class="symptoms-grid" id="symptomsGrid">
+                <!-- Symptoms will be loaded here -->
+            </div>
+            
+            <div id="selectedSymptoms" class="selected-symptoms">
+                <!-- Selected symptoms will appear here -->
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="diagnose()">
+                    <i class="fas fa-diagnosis"></i> Get Diagnosis
+                </button>
+                <button class="btn btn-secondary" onclick="clearSymptoms()">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing symptoms using rule-based reasoning...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-file-medical-alt"></i> Diagnosis Results</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="symptomsCount">0</div>
+                        <div class="stat-label">Symptoms Entered</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="diagnosesCount">0</div>
+                        <div class="stat-label">Possible Diagnoses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="highestConfidence">0%</div>
+                        <div class="stat-label">Highest Confidence</div>
+                    </div>
+                </div>
+                
+                <div id="diagnosesList">
+                    <!-- Diagnosis results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedSymptoms = [];
+        let allSymptoms = [];
+
+        // Load symptoms from API
+        async function loadSymptoms() {
+            try {
+                const response = await fetch('/api/symptoms');
+                allSymptoms = await response.json();
+                renderSymptoms();
+            } catch (error) {
+                console.error('Error loading symptoms:', error);
+            }
+        }
+
+        // Render symptoms to the grid
+        function renderSymptoms() {
+            const grid = document.getElementById('symptomsGrid');
+            grid.innerHTML = '';
+            
+            allSymptoms.forEach(symptom => {
+                const symptomElement = document.createElement('div');
+                symptomElement.className = 'symptom-item';
+                symptomElement.innerHTML = `
+                    <input type="checkbox" id="symptom-${symptom.id}" onchange="toggleSymptom('${symptom.id}')">
+                    <div class="symptom-info">
+                        <div class="symptom-name">${symptom.name}</div>
+                        <div class="symptom-desc">${symptom.description}</div>
+                    </div>
+                `;
+                grid.appendChild(symptomElement);
+            });
+        }
+
+        // Toggle symptom selection
+        function toggleSymptom(symptomId) {
+            const index = selectedSymptoms.indexOf(symptomId);
+            const symptomElement = document.getElementById(`symptom-${symptomId}`).parentElement;
+            
+            if (index === -1) {
+                selectedSymptoms.push(symptomId);
+                symptomElement.classList.add('selected');
+            } else {
+                selectedSymptoms.splice(index, 1);
+                symptomElement.classList.remove('selected');
+            }
+            
+            renderSelectedSymptoms();
+        }
+
+        // Render selected symptoms as tags
+        function renderSelectedSymptoms() {
+            const container = document.getElementById('selectedSymptoms');
+            container.innerHTML = '';
+            
+            selectedSymptoms.forEach(symptomId => {
+                const symptom = allSymptoms.find(s => s.id === symptomId);
+                if (symptom) {
+                    const tag = document.createElement('div');
+                    tag.className = 'selected-symptom-tag';
+                    tag.innerHTML = `
+                        ${symptom.name}
+                        <i class="fas fa-times" onclick="removeSymptom('${symptomId}')"></i>
+                    `;
+                    container.appendChild(tag);
+                }
+            });
+        }
+
+        // Remove a symptom
+        function removeSymptom(symptomId) {
+            selectedSymptoms = selectedSymptoms.filter(id => id !== symptomId);
+            document.getElementById(`symptom-${symptomId}`).checked = false;
+            document.getElementById(`symptom-${symptomId}`).parentElement.classList.remove('selected');
+            renderSelectedSymptoms();
+        }
+
+        // Clear all symptoms
+        function clearSymptoms() {
+            selectedSymptoms = [];
+            document.querySelectorAll('.symptom-item input').forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.parentElement.classList.remove('selected');
+            });
+            renderSelectedSymptoms();
+        }
+
+        // Perform diagnosis
+        async function diagnose() {
+            if (selectedSymptoms.length === 0) {
+                alert('Please select at least one symptom.');
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/diagnose', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symptoms: selectedSymptoms }),
+                });
+                
+                const result = await response.json();
+                document.getElementById('loading').style.display = 'none';
+                displayResults(result);
+            } catch (error) {
+                console.error('Error during diagnosis:', error);
+                document.getElementById('loading').style.display = 'none';
+                alert('An error occurred while processing your request.');
+            }
+        }
+
+        // Display diagnosis results
+        function displayResults(result) {
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Update stats
+            document.getElementById('symptomsCount').textContent = result.symptoms_entered.length;
+            document.getElementById('diagnosesCount').textContent = result.diagnoses.length;
+            
+            const highestConfidence = result.diagnoses.length > 0 ? 
+                Math.max(...result.diagnoses.map(d => d.confidence)) * 100 : 0;
+            document.getElementById('highestConfidence').textContent = `${Math.round(highestConfidence)}%`;
+            
+            // Render diagnoses
+            const diagnosesList = document.getElementById('diagnosesList');
+            diagnosesList.innerHTML = '';
+            
+            if (result.diagnoses.length === 0) {
+                diagnosesList.innerHTML = `
+                    <div class="diagnosis-card">
+                        <p>No specific diagnosis could be determined based on the provided symptoms.</p>
+                        <p>Please consult a healthcare professional for proper evaluation.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            result.diagnoses.forEach(diagnosis => {
+                const confidencePercent = Math.round(diagnosis.confidence * 100);
+                let confidenceClass = 'confidence-low';
+                if (confidencePercent >= 70) confidenceClass = 'confidence-high';
+                else if (confidencePercent >= 50) confidenceClass = 'confidence-medium';
+                
+                const diagnosisElement = document.createElement('div');
+                diagnosisElement.className = 'diagnosis-card';
+                diagnosisElement.innerHTML = `
+                    <div class="diagnosis-header">
+                        <div class="diagnosis-name">${diagnosis.diagnosis}</div>
+                        <div class="confidence-meter">
+                            <div class="confidence-bar">
+                                <div class="confidence-fill ${confidenceClass}" style="width: ${confidencePercent}%"></div>
+                            </div>
+                            <div class="confidence-text">${confidencePercent}%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="reasoning-details">
+                        <h4><i class="fas fa-brain"></i> AI Reasoning</h4>
+                        <p>Matched ${diagnosis.reasoning.matched_symptoms.length} out of ${diagnosis.reasoning.total_required} required symptoms (${diagnosis.reasoning.match_percentage}% match).</p>
+                        <p><strong>Matched Symptoms:</strong> ${diagnosis.reasoning.matched_symptoms.join(', ')}</p>
+                    </div>
+                    
+                    <div class="treatment-plan">
+                        <div class="treatment-title"><i class="fas fa-prescription-bottle-alt"></i> Recommended Treatment</div>
+                        <p>${diagnosis.treatment}</p>
+                    </div>
+                `;
+                diagnosesList.appendChild(diagnosisElement);
+            });
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', loadSymptoms);
+    </script>
+</body>
+</html>
